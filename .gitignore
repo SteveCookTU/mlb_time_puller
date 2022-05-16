@@ -1,0 +1,6 @@
+/target
+dist
+.idea
+*.csv
+*.iml
+Trunk.toml
