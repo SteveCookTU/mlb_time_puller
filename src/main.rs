@@ -14,7 +14,7 @@ fn app(cx: Scope) -> Element {
     let text_routine = use_coroutine(&cx, |mut rx: UnboundedReceiver<String>| {
         to_owned![table_rows];
         async move  {
-            if let Some(date) = rx.next().await {
+            while let Some(date) = rx.next().await {
                 table_rows.set(Some(get_game_times(&date.replace("-", "")).await));
             }
         }
