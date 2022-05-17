@@ -1,5 +1,5 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::fmt::{Display, Formatter};
-use num_enum::{TryFromPrimitive, IntoPrimitive};
 
 #[derive(TryFromPrimitive, IntoPrimitive, Copy, Clone)]
 #[repr(i8)]
@@ -20,4 +20,3 @@ impl Display for Timezone {
         }
     }
 }
-

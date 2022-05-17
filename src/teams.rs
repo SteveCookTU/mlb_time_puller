@@ -1,5 +1,5 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use std::fmt::{Display, Formatter};
-use num_enum::{TryFromPrimitive, IntoPrimitive};
 
 pub const TEAMS: [Team; 31] = [
     Team::All,
@@ -36,39 +36,39 @@ pub const TEAMS: [Team; 31] = [
 ];
 
 #[derive(IntoPrimitive, TryFromPrimitive, Copy, Clone, PartialEq)]
-#[repr(u8)]
+#[repr(u16)]
 pub enum Team {
     All = 0,
-    ArizonaDiamondbacks = 29,
-    AtlantaBraves = 15,
-    BaltimoreOrioles = 1,
-    BostonRedSox = 2,
-    ChicagoCubs = 16,
-    ChicagoWhiteSox = 4,
-    CincinnatiReds = 17,
-    ClevelandGuardians = 5,
-    ColoradoRockies = 27,
-    DetroitTigers = 6,
-    HoustonAstros = 18,
-    KansasCityRoyals = 7,
-    LosAngelesAngels = 3,
-    LosAngelesDodgers = 19,
-    MiamiMarlins = 28,
-    MilwaukeeBrewers = 8,
-    MinnesotaTwins = 9,
-    NewYorkMets = 21,
-    NewYorkYankees = 10,
-    OaklandAthletics = 11,
-    PhiladelphiaPhillies = 22,
-    PittsburghPirates = 23,
-    SanDiegoPadres = 25,
-    SanFranciscoGiants = 26,
-    SeattleMariners = 12,
-    StLouisCardinals = 24,
-    TampaBayRays = 30,
-    TexasRangers = 13,
-    TorontoBlueJays = 14,
-    WashingtonNationals = 20,
+    ArizonaDiamondbacks = 109,
+    AtlantaBraves = 144,
+    BaltimoreOrioles = 110,
+    BostonRedSox = 111,
+    ChicagoCubs = 112,
+    ChicagoWhiteSox = 145,
+    CincinnatiReds = 113,
+    ClevelandGuardians = 114,
+    ColoradoRockies = 115,
+    DetroitTigers = 116,
+    HoustonAstros = 117,
+    KansasCityRoyals = 118,
+    LosAngelesAngels = 108,
+    LosAngelesDodgers = 119,
+    MiamiMarlins = 146,
+    MilwaukeeBrewers = 158,
+    MinnesotaTwins = 142,
+    NewYorkMets = 121,
+    NewYorkYankees = 147,
+    OaklandAthletics = 133,
+    PhiladelphiaPhillies = 143,
+    PittsburghPirates = 134,
+    SanDiegoPadres = 135,
+    SanFranciscoGiants = 137,
+    SeattleMariners = 136,
+    StLouisCardinals = 138,
+    TampaBayRays = 139,
+    TexasRangers = 140,
+    TorontoBlueJays = 141,
+    WashingtonNationals = 120,
 }
 
 impl Display for Team {

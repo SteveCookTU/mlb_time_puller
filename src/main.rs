@@ -2,8 +2,8 @@ use dioxus::core::to_owned;
 use dioxus::prelude::*;
 use futures::StreamExt;
 use mlb_time_puller::get_game_times;
-use mlb_time_puller::timezone::Timezone;
 use mlb_time_puller::teams::{Team, TEAMS};
+use mlb_time_puller::timezone::Timezone;
 
 fn main() {
     dioxus::web::launch(app);
@@ -16,42 +16,68 @@ fn app(cx: Scope) -> Element {
     let timezone = use_state(&cx, || Timezone::EDT);
     let team = use_state(&cx, || Team::All);
 
-    let text_routine = use_coroutine(&cx, |mut rx: UnboundedReceiver<(String, Timezone, Team)>| {
-        to_owned![table_rows, loading];
-        async move  {
-            while let Some((date, timezone, team)) = rx.next().await {
-                table_rows.set(Some(get_game_times(&date.replace("-", ""), timezone, team).await));
-                loading.set(false);
+    let text_routine = use_coroutine(
+        &cx,
+        |mut rx: UnboundedReceiver<(String, Timezone, Team)>| {
+            to_owned![table_rows, loading];
+            async move {
+                while let Some((date, timezone, team)) = rx.next().await {
+                    table_rows.set(Some(get_game_times(&date, timezone, team).await));
+                    loading.set(false);
+                }
             }
-        }
-    });
+        },
+    );
 
     let table = if let Some(rows) = table_rows.get() {
         let rows = rows.iter().map(|row| {
-            let mut row = row.split(",");
-            let game = row.next().unwrap();
+            let mut row = row.split(',');
+            let title = row.next().unwrap();
             let date = row.next().unwrap();
+            let venue_start = row.next().unwrap();
+            let venue_end = row.next().unwrap();
+            let duration = row.next().unwrap();
+            let delay = row.next().unwrap();
             let start = row.next().unwrap();
             let end = row.next().unwrap();
             rsx! {
                 tr {
                     td {
-                        "{game}"
+                        "{title}"
                     }
                     td {
+                        class: "center",
                         "{date}"
                     }
                     td {
+                        class: "center",
+                        "{venue_start}"
+                    }
+                    td {
+                        class: "center",
+                        "{venue_end}"
+                    }
+                    td {
+                        class: "center",
+                        "{duration}"
+                    }
+                    td {
+                        class: "center",
+                        "{delay}"
+                    }
+                    td {
+                        class: "center",
                         "{start}"
                     }
                     td {
+                        class: "center",
                         "{end}"
                     }
                 }
             }
         });
         rsx! {
-            style { ["td { padding: 3px 15px;}"] }
+            style { ["td { padding: 3px;} .center { text-align: center; } th { padding: 0px 15px; }"] }
             table {
                 tr {
                     th {
@@ -61,10 +87,22 @@ fn app(cx: Scope) -> Element {
                         "Date"
                     }
                     th {
-                        "Start Time"
+                        "Venue Start Time"
                     }
                     th {
-                        "End Time"
+                        "Venue End Time"
+                    }
+                    th {
+                        "Game Duration"
+                    }
+                    th {
+                        "Delay Duration"
+                    }
+                    th {
+                        "Converted Start Time"
+                    }
+                    th {
+                        "Converted End Time"
                     }
                 }
                 rows
@@ -78,8 +116,7 @@ fn app(cx: Scope) -> Element {
         }
     };
 
-
-    cx.render(rsx!{
+    cx.render(rsx! {
         button {
             style: "margin-right: 5px;",
             onclick: move |_| {
@@ -96,7 +133,7 @@ fn app(cx: Scope) -> Element {
             oninput: move |evt| date.set(evt.value.clone())
         }
         p {
-            "Timezone:",
+            "Convert to Timezone:",
             select {
                 style: "margin-left: 5px;",
                 onchange: move |evt| {
@@ -126,11 +163,11 @@ fn app(cx: Scope) -> Element {
             select {
                 style: "margin-left: 5px;",
                 onchange: move |evt| {
-                    let i = evt.value.parse::<u8>().unwrap();
+                    let i = evt.value.parse::<u16>().unwrap();
                     team.set(Team::try_from(i).unwrap());
                 },
                 TEAMS.iter().map(|&team| {
-                    let value: u8 = team.into();
+                    let value: u16 = team.into();
                     rsx!(
                         option {
                             value: "{value}",

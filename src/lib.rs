@@ -1,56 +1,121 @@
-use crate::event::Event;
-use crate::scoreboard::Scoreboard;
-use std::ops::Add;
-use time::macros::offset;
-use time::{format_description, Duration, PrimitiveDateTime, Time, UtcOffset};
+use crate::game::Game;
+use crate::schedule::Schedule;
 use crate::teams::Team;
 use crate::timezone::Timezone;
+use std::ops::Add;
+use time::format_description::well_known;
+use time::{Duration, OffsetDateTime, UtcOffset};
 
-mod event;
-mod scoreboard;
-pub mod timezone;
+mod game;
+mod schedule;
 pub mod teams;
+pub mod timezone;
 
 pub async fn get_game_times(date: &str, timezone: Timezone, team: Team) -> Vec<String> {
     let json_raw = reqwest::get(format!(
-        "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates={}",
+        "https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1&date={}",
         date
-    )).await.unwrap().text().await.unwrap();
+    ))
+    .await
+    .unwrap()
+    .text()
+    .await
+    .unwrap();
 
     let mut output = Vec::new();
 
-    let scoreboard = serde_json::from_str::<Scoreboard>(&json_raw).unwrap();
-    let date_format = format_description::parse("[year]-[month]-[day]T[hour]:[minute]Z").unwrap();
-    let time_format = format_description::parse("[hour padding:space]:[minute]").unwrap();
-    for event_entry in scoreboard.events {
-        let team1: Team = event_entry.competitions[0].competitors[0].team.id.parse::<u8>().unwrap().try_into().unwrap();
-        let team2: Team = event_entry.competitions[0].competitors[1].team.id.parse::<u8>().unwrap().try_into().unwrap();
-        if team == Team::All || team == team1 || team == team2 {
-            let start_time = PrimitiveDateTime::parse(&event_entry.date, &date_format)
+    let schedule = serde_json::from_str::<Schedule>(&json_raw).unwrap();
+    for date in schedule.dates {
+        for game in date.games {
+            let away: Team = game.teams.away.team.id.try_into().unwrap();
+            let home: Team = game.teams.home.team.id.try_into().unwrap();
+            if (team == Team::All || team == away || team == home)
+                && game.status.detailed_state == *"Final"
+            {
+                let json_raw = reqwest::get(format!(
+                    "https://statsapi.mlb.com/api/v1.1/game/{}/feed/live",
+                    game.game_pk
+                ))
+                .await
                 .unwrap()
-                .assume_offset(offset!(UTC))
+                .text()
+                .await
+                .unwrap();
+
+                let game = serde_json::from_str::<Game>(&json_raw).unwrap();
+
+                let start_time = OffsetDateTime::parse(
+                    &game.game_data.game_info.first_pitch,
+                    &well_known::Rfc3339,
+                )
+                .unwrap()
                 .to_offset(UtcOffset::from_hms(timezone.into(), 0, 0).unwrap());
-            let mut end_time_str = "N/A".to_string();
-            let json_raw = reqwest::get(format!(
-                "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/summary?event={}",
-                event_entry.id
-            )).await.unwrap().text().await.unwrap();
-
-            let event = serde_json::from_str::<Event>(&json_raw).unwrap();
-            if let Some(duration) = event.game_info.game_duration {
-                let game_duration = format!("{:>5}", duration.trim());
-                let game_time = Time::parse(&game_duration, &time_format).unwrap();
                 let end_time = start_time
-                    .add(Duration::minutes(game_time.minute() as i64))
-                    .add(Duration::hours(game_time.hour() as i64));
-                end_time_str = format!("{:0>2}:{:0>2} {}", end_time.hour(), end_time.minute(), timezone);
+                    .add(Duration::minutes(
+                        game.game_data.game_info.game_duration_minutes,
+                    ))
+                    .add(Duration::minutes(
+                        game.game_data
+                            .game_info
+                            .delay_duration_minutes
+                            .unwrap_or_default(),
+                    ));
+                let game_duration =
+                    Duration::minutes(game.game_data.game_info.game_duration_minutes);
+                let delay_duration = Duration::minutes(
+                    game.game_data
+                        .game_info
+                        .delay_duration_minutes
+                        .unwrap_or_default(),
+                );
+                let venue_start_time = start_time.to_offset(
+                    UtcOffset::from_hms(game.game_data.venue.time_zone.offset, 0, 0).unwrap(),
+                );
+                let venue_end_time = end_time.to_offset(
+                    UtcOffset::from_hms(game.game_data.venue.time_zone.offset, 0, 0).unwrap(),
+                );
+                output.push(format!(
+                    "{} at {},{},{},{},{},{},{},{}",
+                    away,
+                    home,
+                    format_args!("{}", start_time.date()),
+                    format_args!(
+                        "{:0>2}:{:0>2} {}",
+                        venue_start_time.hour(),
+                        venue_start_time.minute(),
+                        game.game_data.venue.time_zone.tz
+                    ),
+                    format_args!(
+                        "{:0>2}:{:0>2} {}",
+                        venue_end_time.hour(),
+                        venue_end_time.minute(),
+                        game.game_data.venue.time_zone.tz
+                    ),
+                    format_args!(
+                        "{}:{:0>2}",
+                        game_duration.whole_hours(),
+                        game_duration.whole_minutes() % 60
+                    ),
+                    format_args!(
+                        "{}:{:0>2}",
+                        delay_duration.whole_hours(),
+                        delay_duration.whole_minutes() % 60
+                    ),
+                    format_args!(
+                        "{:0>2}:{:0>2} {}",
+                        start_time.hour(),
+                        start_time.minute(),
+                        timezone
+                    ),
+                    format_args!(
+                        "{:0>2}:{:0>2} {}",
+                        end_time.hour(),
+                        end_time.minute(),
+                        timezone
+                    )
+                ));
             }
-            output.push(format!("{},{},{},{}", event_entry.name,
-                                format_args!("{}", start_time.date()),
-                                format_args!("{:0>2}:{:0>2} {}", start_time.hour(), start_time.minute(), timezone),
-                                end_time_str));
         }
-
     }
     output
 }
