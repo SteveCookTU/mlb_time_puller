@@ -122,7 +122,7 @@ fn app(cx: Scope) -> Element {
             }
         }
         p {
-            "Teams:",
+            "Team:",
             select {
                 style: "margin-left: 5px;",
                 onchange: move |evt| {
