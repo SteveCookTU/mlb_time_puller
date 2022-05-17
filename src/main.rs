@@ -10,12 +10,14 @@ fn main() {
 fn app(cx: Scope) -> Element {
     let table_rows: &UseState<Option<Vec<String>>> = use_state(&cx, || None);
     let date = use_state(&cx, || "2022-05-15".to_string());
+    let loading = use_state(&cx, || false);
 
     let text_routine = use_coroutine(&cx, |mut rx: UnboundedReceiver<String>| {
-        to_owned![table_rows];
+        to_owned![table_rows, loading];
         async move  {
             while let Some(date) = rx.next().await {
                 table_rows.set(Some(get_game_times(&date.replace("-", "")).await));
+                loading.set(false);
             }
         }
     });
@@ -47,7 +49,6 @@ fn app(cx: Scope) -> Element {
         rsx! {
             style { ["td { padding: 3px 15px;}"] }
             table {
-
                 tr {
                     th {
                         "Game"
@@ -76,7 +77,11 @@ fn app(cx: Scope) -> Element {
 
     cx.render(rsx!{
         button {
-            onclick: move |_| text_routine.send(date.get().to_string()),
+            onclick: move |_| {
+                loading.set(true);
+                text_routine.send(date.get().to_string())
+            },
+            disabled: "{loading}",
             "Load Data"
         }
         input {
@@ -84,7 +89,6 @@ fn app(cx: Scope) -> Element {
             value: "{date}",
             oninput: move |evt| date.set(evt.value.clone())
         }
-
         table
     })
 }
