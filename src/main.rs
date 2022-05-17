@@ -77,7 +77,7 @@ fn app(cx: Scope) -> Element {
             }
         });
         rsx! {
-            style { ["td { padding: 3px;} .center { text-align: center; } th { padding: 0px 15px; }"] }
+            style { ["td { padding: 3px 10px;} .center { text-align: center; } th { padding: 0px 15px; }"] }
             table {
                 tr {
                     th {
