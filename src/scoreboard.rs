@@ -13,4 +13,20 @@ pub struct EventEntry {
     pub name: String,
     #[serde(rename = "shortName")]
     pub short_name: String,
+    pub competitions: Vec<Competition>
+}
+
+#[derive(Deserialize)]
+pub struct Competition {
+    pub competitors: Vec<Competitor>,
+}
+
+#[derive(Deserialize)]
+pub struct Competitor {
+    pub team: Team,
+}
+
+#[derive(Deserialize)]
+pub struct Team {
+    pub id: String,
 }
