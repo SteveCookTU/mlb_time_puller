@@ -16,6 +16,17 @@ pub struct Game {
     pub game_pk: usize,
     pub status: Status,
     pub teams: Teams,
+    pub broadcasts: Vec<Broadcast>
+}
+
+#[derive(Deserialize)]
+pub struct Broadcast {
+    pub id: u16,
+    pub name: String,
+    #[serde(rename = "type")]
+    pub broadcast_type: String,
+    #[serde(rename = "homeAway")]
+    pub home_away: String,
 }
 
 #[derive(Deserialize)]

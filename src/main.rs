@@ -40,6 +40,7 @@ fn app(cx: Scope) -> Element {
             let delay = row.next().unwrap();
             let start = row.next().unwrap();
             let end = row.next().unwrap();
+            let broadcasts = row.next().unwrap().replace('.', ",");
             rsx! {
                 tr {
                     td {
@@ -73,6 +74,10 @@ fn app(cx: Scope) -> Element {
                         class: "center",
                         "{end}"
                     }
+                    td {
+                        class: "center",
+                        "{broadcasts}"
+                    }
                 }
             }
         });
@@ -103,6 +108,9 @@ fn app(cx: Scope) -> Element {
                     }
                     th {
                         "Converted End Time"
+                    }
+                    th {
+                        "Broadcasts"
                     }
                 }
                 rows
