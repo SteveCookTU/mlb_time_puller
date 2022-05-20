@@ -11,7 +11,7 @@ mod schedule;
 pub mod teams;
 pub mod timezone;
 
-pub async fn get_game_times(date: &str, timezone: Timezone, team: Team) -> Vec<String> {
+pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<String> {
     let json_raw = reqwest::get(format!(
         "https://statsapi.mlb.com/api/v1/schedule?language=en&sportId=1&date={}&hydrate=game,broadcasts",
         date

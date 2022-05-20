@@ -1,7 +1,7 @@
 use dioxus::core::to_owned;
 use dioxus::prelude::*;
 use futures::StreamExt;
-use mlb_time_puller::get_game_times;
+use mlb_time_puller::get_mlb_times;
 use mlb_time_puller::teams::{Team, TEAMS};
 use mlb_time_puller::timezone::Timezone;
 
@@ -22,7 +22,7 @@ fn app(cx: Scope) -> Element {
             to_owned![table_rows, loading];
             async move {
                 while let Some((date, timezone, team)) = rx.next().await {
-                    table_rows.set(Some(get_game_times(&date, timezone, team).await));
+                    table_rows.set(Some(get_mlb_times(&date, timezone, team).await));
                     loading.set(false);
                 }
             }
