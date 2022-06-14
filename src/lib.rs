@@ -70,23 +70,54 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
 
                     let delay_time: Duration = {
                         let play = &game.live_data.plays.all_plays[0];
-                        let mut duration_time = game
-                            .game_data
-                            .game_info
-                            .delay_duration_minutes
-                            .unwrap_or_default();
+                        let mut duration_time = Duration::minutes(
+                            game.game_data
+                                .game_info
+                                .delay_duration_minutes
+                                .unwrap_or_default(),
+                        );
                         for play_event in play.play_events.iter() {
                             if play_event
                                 .details
                                 .description
+                                .as_ref()
+                                .unwrap()
                                 .to_lowercase()
                                 .contains("delayed start")
                             {
-                                duration_time = 0;
+                                duration_time = Duration::minutes(0);
                                 break;
                             }
                         }
-                        Duration::minutes(duration_time)
+                        if duration_time.is_zero() {
+                            for all_play in game.live_data.plays.all_plays.iter().skip(1) {
+                                for play_event in all_play.play_events.iter() {
+                                    if let Some(description) =
+                                        play_event.details.description.as_ref()
+                                    {
+                                        if description.to_lowercase().contains("delayed") {
+                                            if let Some(end_time) = play_event.end_time.as_ref() {
+                                                let start_time = OffsetDateTime::parse(
+                                                    &play_event.start_time,
+                                                    &well_known::Rfc3339,
+                                                )
+                                                .unwrap();
+
+                                                let end_time = OffsetDateTime::parse(
+                                                    end_time,
+                                                    &well_known::Rfc3339,
+                                                )
+                                                .unwrap();
+
+                                                let duration = end_time - start_time;
+                                                duration_time += duration;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        duration_time
                     };
 
                     let end_time = start_time
@@ -102,6 +133,9 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
                             .delay_duration_minutes
                             .unwrap_or_default(),
                     );
+
+                    let pre_game_delay = delay_duration - delay_time;
+
                     let venue_start_time = start_time.to_offset(
                         UtcOffset::from_hms(game.game_data.venue.time_zone.offset, 0, 0).unwrap(),
                     );
@@ -125,7 +159,7 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
                         .collect::<Vec<String>>()
                         .join(". ");
                     output.push(format!(
-                        "{} at {},{},{},{},{},{},{},{},{}",
+                        "{} at {},{},{},{},{},{},{},{},{},{}",
                         away,
                         home,
                         format_args!("{}", start_time.date()),
@@ -147,14 +181,14 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
                             game_duration.whole_minutes() % 60
                         ),
                         format_args!(
-                            "{}:{:0>2} ({})",
-                            delay_duration.whole_hours(),
-                            delay_duration.whole_minutes() % 60,
-                            if delay_time.is_zero() {
-                                "Pre-Game"
-                            } else {
-                                "During Game"
-                            }
+                            "{}:{:0>2}",
+                            pre_game_delay.whole_hours(),
+                            pre_game_delay.whole_minutes() % 60,
+                        ),
+                        format_args!(
+                            "{}:{:0>2}",
+                            delay_time.whole_hours(),
+                            delay_time.whole_minutes() % 60,
                         ),
                         format_args!(
                             "{:0>2}:{:0>2} {}",

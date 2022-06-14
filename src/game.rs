@@ -37,11 +37,13 @@ pub struct PlayEvent {
     pub details: PlayEventDetails,
     #[serde(rename = "startTime")]
     pub start_time: String,
+    #[serde(rename = "endTime")]
+    pub end_time: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct PlayEventDetails {
-    pub description: String,
+    pub description: Option<String>,
 }
 
 #[derive(Deserialize)]

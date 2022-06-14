@@ -37,7 +37,8 @@ fn app(cx: Scope) -> Element {
             let venue_start = row.next().unwrap();
             let venue_end = row.next().unwrap();
             let duration = row.next().unwrap();
-            let delay = row.next().unwrap();
+            let pre_delay = row.next().unwrap();
+            let during_delay = row.next().unwrap();
             let start = row.next().unwrap();
             let end = row.next().unwrap();
             let broadcasts = row.next().unwrap().replace('.', ",");
@@ -64,7 +65,11 @@ fn app(cx: Scope) -> Element {
                     }
                     td {
                         class: "center",
-                        "{delay}"
+                        "{pre_delay}"
+                    }
+                    td {
+                        class: "center",
+                        "{during_delay}"
                     }
                     td {
                         class: "center",
@@ -101,7 +106,10 @@ fn app(cx: Scope) -> Element {
                         "Game Duration"
                     }
                     th {
-                        "Delay Duration"
+                        "Pre-Game Delay"
+                    }
+                    th {
+                        "During Game Delay"
                     }
                     th {
                         "Converted Start Time"
