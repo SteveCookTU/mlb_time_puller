@@ -29,8 +29,7 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
         for schedule_game in schedule_date.games {
             let away: Team = schedule_game.teams.away.team.id.try_into().unwrap();
             let home: Team = schedule_game.teams.home.team.id.try_into().unwrap();
-            if team == Team::All || team == away || team == home
-            {
+            if team == Team::All || team == away || team == home {
                 if schedule_game.status.detailed_state != *"Final" {
                     output.push(format!(
                         "{} at {},{},{},{},{},{},{},{},{}",
@@ -52,31 +51,37 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
                     "https://statsapi.mlb.com/api/v1.1/game/{}/feed/live",
                     schedule_game.game_pk
                 ))
-                    .await
-                    .unwrap()
-                    .text()
-                    .await
-                    .unwrap();
+                .await
+                .unwrap()
+                .text()
+                .await
+                .unwrap();
 
                 if let Ok(game) = serde_json::from_str::<Game>(&json_raw) {
                     let start_time = OffsetDateTime::parse(
                         &game.game_data.game_info.first_pitch,
                         &well_known::Rfc3339,
                     )
-                        .unwrap()
-                        .to_offset(UtcOffset::from_hms(timezone.into(), 0, 0).unwrap());
+                    .unwrap()
+                    .to_offset(UtcOffset::from_hms(timezone.into(), 0, 0).unwrap());
                     if start_time.date().to_string() != *date {
                         continue;
                     }
 
                     let delay_time: Duration = {
                         let play = &game.live_data.plays.all_plays[0];
-                        let mut duration_time = game.game_data
+                        let mut duration_time = game
+                            .game_data
                             .game_info
                             .delay_duration_minutes
                             .unwrap_or_default();
                         for play_event in play.play_events.iter() {
-                            if play_event.details.description.to_lowercase().contains("delayed start") {
+                            if play_event
+                                .details
+                                .description
+                                .to_lowercase()
+                                .contains("delayed start")
+                            {
                                 duration_time = 0;
                                 break;
                             }
@@ -103,13 +108,22 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
                     let venue_end_time = end_time.to_offset(
                         UtcOffset::from_hms(game.game_data.venue.time_zone.offset, 0, 0).unwrap(),
                     );
-                    let broadcasts = schedule_game.broadcasts.iter().filter_map(|b|  {
-                        if b.broadcast_type == *"TV" {
-                            Some(format!("{} ({})", b.name.replace("(out-of-market only)", ""), b.home_away.clone()))
-                        } else {
-                            None
-                        }
-                    }).collect::<Vec<String>>().join(". ");
+                    let broadcasts = schedule_game
+                        .broadcasts
+                        .iter()
+                        .filter_map(|b| {
+                            if b.broadcast_type == *"TV" {
+                                Some(format!(
+                                    "{} ({})",
+                                    b.name.replace("(out-of-market only)", ""),
+                                    b.home_away.clone()
+                                ))
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<String>>()
+                        .join(". ");
                     output.push(format!(
                         "{} at {},{},{},{},{},{},{},{},{}",
                         away,

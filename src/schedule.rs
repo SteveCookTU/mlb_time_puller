@@ -16,7 +16,7 @@ pub struct Game {
     pub game_pk: usize,
     pub status: Status,
     pub teams: Teams,
-    pub broadcasts: Vec<Broadcast>
+    pub broadcasts: Vec<Broadcast>,
 }
 
 #[derive(Deserialize)]

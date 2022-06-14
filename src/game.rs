@@ -23,13 +23,13 @@ pub struct LiveData {
 #[derive(Deserialize)]
 pub struct Plays {
     #[serde(rename = "allPlays")]
-    pub all_plays: Vec<Play>
+    pub all_plays: Vec<Play>,
 }
 
 #[derive(Deserialize)]
 pub struct Play {
     #[serde(rename = "playEvents")]
-    pub play_events: Vec<PlayEvent>
+    pub play_events: Vec<PlayEvent>,
 }
 
 #[derive(Deserialize)]
