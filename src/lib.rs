@@ -68,16 +68,27 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
                     if start_time.date().to_string() != *date {
                         continue;
                     }
+
+                    let delay_time: Duration = {
+                        let play = &game.live_data.plays.all_plays[0];
+                        let mut duration_time = game.game_data
+                            .game_info
+                            .delay_duration_minutes
+                            .unwrap_or_default();
+                        for play_event in play.play_events.iter() {
+                            if play_event.details.description.to_lowercase().contains("delayed start") {
+                                duration_time = 0;
+                                break;
+                            }
+                        }
+                        Duration::minutes(duration_time)
+                    };
+
                     let end_time = start_time
                         .add(Duration::minutes(
                             game.game_data.game_info.game_duration_minutes,
                         ))
-                        .add(Duration::minutes(
-                            game.game_data
-                                .game_info
-                                .delay_duration_minutes
-                                .unwrap_or_default(),
-                        ));
+                        .add(delay_time);
                     let game_duration =
                         Duration::minutes(game.game_data.game_info.game_duration_minutes);
                     let delay_duration = Duration::minutes(
@@ -122,9 +133,14 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
                             game_duration.whole_minutes() % 60
                         ),
                         format_args!(
-                            "{}:{:0>2}",
+                            "{}:{:0>2} ({})",
                             delay_duration.whole_hours(),
-                            delay_duration.whole_minutes() % 60
+                            delay_duration.whole_minutes() % 60,
+                            if delay_time.is_zero() {
+                                "Pre-Game"
+                            } else {
+                                "During Game"
+                            }
                         ),
                         format_args!(
                             "{:0>2}:{:0>2} {}",
