@@ -41,7 +41,11 @@ fn app(cx: Scope) -> Element {
             let during_delay = row.next().unwrap();
             let start = row.next().unwrap();
             let end = row.next().unwrap();
-            let broadcasts = row.next().unwrap().replace('.', ",");
+            let broadcasts = if let Some(broadcasts) = row.next() {
+                broadcasts.replace('.', ",")
+            } else {
+                "".to_string()
+            };
             rsx! {
                 tr {
                     td {

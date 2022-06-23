@@ -30,7 +30,7 @@ pub async fn get_mlb_times(date: &str, timezone: Timezone, team: Team) -> Vec<St
             let away: Team = schedule_game.teams.away.team.id.try_into().unwrap();
             let home: Team = schedule_game.teams.home.team.id.try_into().unwrap();
             if team == Team::All || team == away || team == home {
-                if schedule_game.status.detailed_state != *"Final" {
+                if schedule_game.status.detailed_state != *"Final" && !schedule_game.status.detailed_state.contains("Completed Early") {
                     output.push(format!(
                         "{} at {},{},{},{},{},{},{},{},{}",
                         away,
