@@ -307,7 +307,7 @@ async function load(module, imports) {
 
 async function init(input) {
     if (typeof input === 'undefined') {
-        input = new URL('mlb_time_puller-77e99d06cec3422b_bg.wasm', import.meta.url);
+        input = new URL('mlb_time_puller-c1607c0830c68a65_bg.wasm', import.meta.url);
     }
     const imports = {};
     imports.wbg = {};
